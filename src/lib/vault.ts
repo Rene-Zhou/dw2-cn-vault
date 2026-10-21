@@ -43,6 +43,8 @@ export interface Attachment {
 export type LinkTarget =
   | { kind: 'note'; note: Note }
   | { kind: 'file'; file: Attachment }
+  /** Exists in the vault but is not published (EXCLUDE) — links are pruned */
+  | { kind: 'excluded'; path: string }
 
 export interface Vault {
   notes: Note[]
@@ -55,6 +57,8 @@ export interface RawFile {
   path: string
   content?: string
   file?: string
+  /** Matched EXCLUDE: indexed only so links to it can be pruned */
+  excluded?: boolean
 }
 
 // ── Slugs ───────────────────────────────────────────────────────────────────
@@ -122,23 +126,27 @@ export function scanVaultDir(vaultDir: string, exclude: string[] = []): RawFile[
 
   const files: RawFile[] = []
 
-  function walk(dir: string, rel: string) {
+  function walk(dir: string, rel: string, excluded: boolean) {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
       if (entry.name.startsWith('.')) continue
       const relPath = rel ? `${rel}/${entry.name}` : entry.name
-      if (isExcluded(relPath, exclude)) continue
+      const isOut = excluded || isExcluded(relPath, exclude)
       const full = path.join(dir, entry.name)
 
       if (entry.isDirectory()) {
-        walk(full, relPath)
+        walk(full, relPath, isOut)
       } else if (entry.isFile() && !SKIP_EXTENSIONS.has(path.extname(entry.name).toLowerCase())) {
+        if (isOut) {
+          files.push({ path: relPath, excluded: true })
+          continue
+        }
         const isNote = entry.name.toLowerCase().endsWith('.md')
         files.push({ path: relPath, file: full, content: isNote ? fs.readFileSync(full, 'utf8') : undefined })
       }
     }
   }
 
-  walk(vaultDir, '')
+  walk(vaultDir, '', false)
   return files.sort((a, b) => a.path.localeCompare(b.path))
 }
 
@@ -147,10 +155,13 @@ export function scanVaultDir(vaultDir: string, exclude: string[] = []): RawFile[
 export function indexVault(files: RawFile[], homeNote?: string): Vault {
   const notes: Note[] = []
   const attachments: Attachment[] = []
+  const excluded: Array<{ path: string }> = []
   const usedUrls = new Set<string>()
 
   for (const f of files) {
-    if (f.path.toLowerCase().endsWith('.md')) {
+    if (f.excluded) {
+      excluded.push({ path: f.path.toLowerCase().endsWith('.md') ? f.path.slice(0, -3) : f.path })
+    } else if (f.path.toLowerCase().endsWith('.md')) {
       const notePath = f.path.slice(0, -3)
       const name = notePath.split('/').at(-1)!
       const dir = notePath.includes('/') ? notePath.slice(0, notePath.lastIndexOf('/')) : ''
@@ -221,6 +232,9 @@ export function indexVault(files: RawFile[], homeNote?: string): Vault {
 
     const file = filesByPath.get(target) ?? filesByPath.get(relative) ?? bySuffix(attachments, target, fromDir)
     if (file) return { kind: 'file', file }
+
+    const hidden = bySuffix(excluded, noteKey, fromDir) ?? bySuffix(excluded, relNoteKey, fromDir) ?? bySuffix(excluded, target, fromDir)
+    if (hidden) return { kind: 'excluded', path: hidden.path }
 
     return null
   }

@@ -94,4 +94,34 @@ describe('renderer', () => {
     expect(html).toContain('href="/files/files/a.pdf" class="internal-link" data-file')
     expect(html).toContain('<div class="table-wrapper"><table>')
   })
+
+  it('prunes links and embeds pointing at excluded notes', () => {
+    const vault = indexVault([
+      { path: '08 冒险/冒险.md', excluded: true },
+      { path: '07 战役/战役.md', content: '# 战役' },
+      {
+        path: '目录.md',
+        content: [
+          '1. [[07 战役/战役|战役]]',
+          '2. [[08 冒险/冒险|冒险]]',
+          '',
+          '- [[08 冒险/冒险|冒险]]',
+          '  - [[08 冒险/冒险#背景|背景]]',
+          '- [[07 战役/战役|战役]]',
+          '',
+          '[[08 冒险/冒险]]',
+          '',
+          '另见[[冒险]]一章。',
+          '',
+          '![[08 冒险/冒险]]',
+        ].join('\n'),
+      },
+    ])
+    const html = createRenderer(vault).renderNote(vault.notes.find((n) => n.name === '目录')!).html
+    expect(html.match(/<li>/g)).toHaveLength(2)
+    expect(html).not.toContain('背景')
+    expect(html).not.toContain('internal-embed')
+    expect(html).toContain('<p>另见冒险一章。</p>')
+    expect(html).not.toContain('is-unresolved')
+  })
 })

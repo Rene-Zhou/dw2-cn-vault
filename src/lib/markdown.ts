@@ -162,6 +162,9 @@ export function createRenderer(vault: Vault) {
     const src = escapeHtml(raw)
     const alt = link.alias ? ` alt="${escapeHtml(link.alias)}"` : ''
 
+    // Unpublished (EXCLUDE) — drop the embed entirely
+    if (resolved?.kind === 'excluded') return ''
+
     if (!resolved) {
       return `<div class="internal-embed file-embed mod-empty is-unresolved" src="${src}"${alt}><div class="file-embed-title">“${escapeHtml(link.target)}” 尚未创建</div></div>`
     }
@@ -223,7 +226,7 @@ interface ObsidianOptions {
 function remarkObsidian(options: ObsidianOptions) {
   const { vault, note, links, embed } = options
 
-  function wikilink(link: ParsedLink): Html {
+  function wikilink(link: ParsedLink): Html | Text {
     const display = link.alias ?? (link.heading ? `${link.target || note.title} > ${link.heading}` : link.target)
     const dataHref = escapeHtml(link.target + (link.heading ? '#' + link.heading : ''))
     const anchor = link.heading ? '#' + encodeURIComponent(headingId(link.heading)) : ''
@@ -234,6 +237,10 @@ function remarkObsidian(options: ObsidianOptions) {
     }
 
     const resolved = vault.resolve(link.target, note.path)
+    if (resolved?.kind === 'excluded') {
+      // Unpublished note: keep the words, drop the link; pruneExcluded may remove the whole item
+      return { type: 'text', value: display, data: { excluded: true } } as Text
+    }
     if (!resolved) {
       return { type: 'html', value: `<a data-href="${dataHref}" class="internal-link is-unresolved" title="尚未创建">${escapeHtml(display)}</a>` }
     }
@@ -298,7 +305,42 @@ function remarkObsidian(options: ObsidianOptions) {
       ;(parent.children as RootContent[]).splice(index, 1, ...meaningful)
       return [SKIP, index + meaningful.length]
     })
+
+    // 4. Remove paragraphs and list items that only pointed at unpublished notes
+    pruneExcluded(tree)
   }
+}
+
+type Container = { children: RootContent[] }
+
+function isMarked(node: RootContent, key: 'embed' | 'excluded'): boolean {
+  return (node.type === 'html' || node.type === 'text') && Boolean((node.data as Record<string, unknown> | undefined)?.[key])
+}
+
+/** Every visible piece of this block is a link to (or embed of) an unpublished note. */
+function onlyExcluded(node: RootContent): boolean {
+  if (isMarked(node, 'embed') && !(node as Html).value) return true
+  if (node.type !== 'paragraph') return false
+  const meaningful = node.children.filter((c) => !(c.type === 'text' && !c.value.trim() && !isMarked(c, 'excluded')) && c.type !== 'break')
+  return meaningful.length > 0 && meaningful.every((c) => isMarked(c as RootContent, 'excluded') || (isMarked(c as RootContent, 'embed') && !(c as Html).value))
+}
+
+function pruneExcluded(parent: Container) {
+  parent.children = parent.children.filter((child) => {
+    if (child.type === 'list') {
+      child.children = child.children.filter((item) => {
+        // Prune nested lists first, then judge the item by what remains
+        for (const c of item.children) if (c.type === 'list') pruneExcluded({ children: [c] } as Container)
+        item.children = item.children.filter((c) => !(c.type === 'list' && c.children.length === 0))
+        if (item.children.every(onlyExcluded)) return false
+        pruneExcluded(item as Container)
+        return true
+      })
+      return child.children.length > 0
+    }
+    if ('children' in child && child.type !== 'paragraph' && child.type !== 'heading') pruneExcluded(child as Container)
+    return !onlyExcluded(child)
+  })
 }
 
 const CALLOUT_RE = /^\[!([^\]\s]+)\]([+-]?)[ \t]*/
