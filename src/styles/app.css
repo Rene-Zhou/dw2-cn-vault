@@ -183,7 +183,9 @@ kbd {
 }
 
 .side-panel + .side-panel {
-  margin-top: var(--size-4-6);
+  margin-top: var(--size-4-4);
+  padding-top: var(--size-4-4);
+  border-top: 1px solid var(--background-modifier-border);
 }
 .side-panel-title {
   margin: 0 0 var(--size-4-1);
