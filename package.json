@@ -8,13 +8,15 @@
   },
   "scripts": {
     "dev": "astro dev",
+    "prebuild": "node scripts/third-party-notices.mjs",
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
     "type-check": "astro sync && tsc --noEmit",
     "test": "vitest run",
     "lint": "eslint .",
-    "deploy": "bash deploy/deploy.sh"
+    "deploy": "bash deploy/deploy.sh",
+    "notices": "node scripts/third-party-notices.mjs"
   },
   "dependencies": {
     "@astrojs/react": "^5.0.7",
@@ -50,5 +52,6 @@
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.0",
     "vitest": "^4.1.12"
-  }
+  },
+  "license": "MIT"
 }

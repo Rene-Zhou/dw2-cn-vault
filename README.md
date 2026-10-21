@@ -76,3 +76,9 @@ src/
     obsidian-base.css       Obsidian CSS 变量与阅读视图基础样式（自行编写，非 Obsidian 源码）
     app.css                 站点外壳样式
 ```
+
+## 许可
+
+本项目代码以 [MIT](LICENSE) 许可发布，仅覆盖站点生成器本身；库中的规则文本、译文和原文附件不在此许可范围内，权利归各自权利人所有。
+
+网站会向浏览器分发第三方代码与资源（React、Floating UI、react-rnd 等 MIT 许可的库，内联的 Lucide 图标，以及库里启用的 Obsidian 主题）。每次构建前会自动生成 `public/THIRD-PARTY-NOTICES.txt`，随站点一起发布，满足这些许可要求保留版权声明的条件；也可以手动运行 `npm run notices` 重新生成。
