@@ -2,10 +2,11 @@
 import '../styles/app.css'
 import { ClientRouter } from 'astro:transitions'
 import FileTree from '@components/FileTree.astro'
+import Outline from '@components/Outline.astro'
 import { HoverPopover } from '@components/HoverPopover'
 import { SearchModal } from '@components/SearchModal'
 import { config } from '../config.ts'
-import { getSite, type Page } from '@lib/site'
+import { getSite, nestOutline, type Page } from '@lib/site'
 import { buildFileTree } from '@lib/file-tree'
 import { loadAppearance } from '@lib/obsidian-css'
 import type { Note } from '@lib/vault'
@@ -119,21 +120,20 @@ const description = page?.text.slice(0, 120)
           {page.outline.length > 1 && (
             <section class="side-panel">
               <h2 class="side-panel-title">大纲</h2>
-              <ul class="outline">
-                {page.outline.map((item) => (
-                  <li class={`outline-item level-${item.level}`}>
-                    <a href={`#${encodeURIComponent(item.id)}`}>{item.text}</a>
-                  </li>
-                ))}
-              </ul>
+              <Outline nodes={nestOutline(page.outline)} root />
             </section>
           )}
           <section class="side-panel">
             <h2 class="side-panel-title">反向链接 <span class="count">{backlinks.length}</span></h2>
             {backlinks.length > 0 ? (
-              <ul class="backlinks">
+              <ul class="ft-children backlinks">
                 {backlinks.map((b) => (
-                  <li><a href={b.url} class="internal-link">{b.title}</a><span class="backlink-path">{b.dir}</span></li>
+                  <li class="ft-item">
+                    <a href={b.url} class="ft-row internal-link">
+                      <span class="ft-link">{b.title}</span>
+                      {b.dir && <span class="backlink-path">{b.dir}</span>}
+                    </a>
+                  </li>
                 ))}
               </ul>
             ) : (

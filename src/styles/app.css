@@ -177,7 +177,7 @@ kbd {
 .sidebar-right {
   width: var(--right-sidebar-width);
   overflow-y: auto;
-  padding: var(--size-4-4);
+  padding: var(--size-4-4) var(--size-4-2) var(--size-4-6);
   border-inline-start: 1px solid var(--background-modifier-border);
   background-color: var(--background-primary);
 }
@@ -186,10 +186,12 @@ kbd {
   margin-top: var(--size-4-6);
 }
 .side-panel-title {
-  margin: 0 0 var(--size-4-2);
+  margin: 0 0 var(--size-4-1);
+  padding: 0 var(--size-2-2);
   font-size: var(--font-ui-smaller);
   font-weight: var(--font-semibold);
   letter-spacing: 0.05em;
+  line-height: var(--line-height-tight);
   color: var(--text-faint);
 }
 .side-panel-title .count {
@@ -198,48 +200,24 @@ kbd {
 }
 .side-panel .empty {
   margin: 0;
+  padding: 3px var(--size-2-2);
   color: var(--text-faint);
 }
 
-.outline,
-.backlinks {
-  list-style: none;
-  margin: 0;
-  padding: 0;
+/* Outline and backlinks reuse the file-tree row styles (.ft-*) */
+.outline .ft-folder > .ft-row .ft-link {
+  font-weight: inherit;
 }
-.outline-item a {
-  display: block;
-  padding: var(--size-2-1) var(--size-4-2);
-  border-radius: var(--radius-s);
-  color: var(--nav-item-color);
-  text-decoration: none;
-  line-height: var(--line-height-tight);
-}
-.outline-item a:hover {
-  color: var(--nav-item-color-hover);
-  background-color: var(--nav-item-background-hover);
-}
-.outline-item.level-1 a { font-weight: var(--font-medium); }
-.outline-item.level-2 a { padding-inline-start: calc(var(--size-4-2) + 12px * 1); }
-.outline-item.level-3 a { padding-inline-start: calc(var(--size-4-2) + 12px * 2); }
-.outline-item.level-4 a { padding-inline-start: calc(var(--size-4-2) + 12px * 3); }
-.outline-item.level-5 a,
-.outline-item.level-6 a { padding-inline-start: calc(var(--size-4-2) + 12px * 4); }
-
-.backlinks li {
-  display: flex;
-  flex-direction: column;
-  padding: var(--size-2-2) var(--size-4-2);
-  border-radius: var(--radius-s);
-}
-.backlinks li:hover {
-  background-color: var(--nav-item-background-hover);
-}
-.backlinks .internal-link {
-  color: var(--text-normal);
+.backlinks .ft-row {
   text-decoration: none;
 }
 .backlink-path {
+  flex-shrink: 0;
+  max-width: 45%;
+  padding-inline-end: var(--size-2-2);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: var(--font-ui-smaller);
   color: var(--text-faint);
 }

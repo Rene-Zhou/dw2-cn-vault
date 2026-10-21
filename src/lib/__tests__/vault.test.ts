@@ -80,3 +80,18 @@ describe('searchDocs', () => {
     expect(searchDocs(docs, 'paladin').hits).toHaveLength(1)
   })
 })
+
+describe('nestOutline', () => {
+  it('nests headings by level', async () => {
+    const { nestOutline } = await import('../site.ts')
+    const tree = nestOutline([
+      { level: 1, text: 'A', id: 'a' },
+      { level: 2, text: 'B', id: 'b' },
+      { level: 3, text: 'C', id: 'c' },
+      { level: 2, text: 'D', id: 'd' },
+    ])
+    expect(tree).toHaveLength(1)
+    expect(tree[0].children.map((n) => n.text)).toEqual(['B', 'D'])
+    expect(tree[0].children[0].children.map((n) => n.text)).toEqual(['C'])
+  })
+})

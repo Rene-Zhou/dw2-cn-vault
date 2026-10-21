@@ -1,0 +1,21 @@
+---
+import type { OutlineNode } from '../lib/site.ts'
+
+export interface Props {
+  nodes: OutlineNode[]
+  root?: boolean
+}
+
+const { nodes, root = false } = Astro.props
+---
+
+<ul class:list={['ft-children', { 'outline': root }]}>
+  {nodes.map((node) => (
+    <li class:list={['ft-item', { 'ft-folder': node.children.length > 0 }]}>
+      <div class="ft-row">
+        <a href={`#${encodeURIComponent(node.id)}`} class="ft-link">{node.text}</a>
+      </div>
+      {node.children.length > 0 && <Astro.self nodes={node.children} />}
+    </li>
+  ))}
+</ul>

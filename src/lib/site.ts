@@ -22,6 +22,23 @@ export interface OutlineItem {
   id: string
 }
 
+export interface OutlineNode extends OutlineItem {
+  children: OutlineNode[]
+}
+
+/** Nest a flat heading list by level, like Obsidian's outline pane. */
+export function nestOutline(items: OutlineItem[]): OutlineNode[] {
+  const root: OutlineNode[] = []
+  const stack: OutlineNode[] = []
+  for (const item of items) {
+    const node: OutlineNode = { ...item, children: [] }
+    while (stack.length && stack.at(-1)!.level >= item.level) stack.pop()
+    ;(stack.at(-1)?.children ?? root).push(node)
+    stack.push(node)
+  }
+  return root
+}
+
 export interface Page {
   note: Note
   html: string
