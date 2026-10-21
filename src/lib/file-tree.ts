@@ -60,4 +60,9 @@ function sortTree(node: FileTreeNode) {
   for (const child of node.children) {
     if (child.isDir) sortTree(child)
   }
+  // A folder holding nothing but its folder note is shown as a plain note
+  // (after sorting, so it keeps its place among the folders)
+  for (const child of node.children) {
+    if (child.isDir && child.url && child.children.length === 0) child.isDir = false
+  }
 }

@@ -61,6 +61,11 @@ describe('buildFileTree', () => {
     expect(paladin.url).toBe('/05-职业/06-圣武士/圣武士')
     expect(paladin.children.map((c) => c.name)).toEqual(['动作'])
   })
+
+  it('shows a folder containing only its folder note as a plain note', () => {
+    const tree = buildFileTree(indexVault([{ path: '01 引言/引言.md', content: '# 引言' }]).notes)
+    expect(tree.children[0]).toMatchObject({ name: '01 引言', url: '/01-引言/引言', isDir: false })
+  })
 })
 
 describe('searchDocs', () => {
