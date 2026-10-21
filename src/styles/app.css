@@ -21,12 +21,20 @@ body {
 }
 
 kbd {
-  font-family: var(--font-monospace);
-  font-size: 0.85em;
-  padding: 0 0.35em;
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+  min-height: 18px;
+  padding: 0 5px;
   border: 1px solid var(--background-modifier-border);
   border-radius: var(--radius-s);
+  font-family: var(--font-interface);
+  font-size: 11px;
+  line-height: 1;
   color: var(--text-faint);
+}
+.shortcut-mod.is-ctrl {
+  margin-inline-end: 3px;
 }
 
 .clickable-icon {

@@ -114,8 +114,20 @@ function onTreeClick(e: MouseEvent) {
 
 // ── Init ────────────────────────────────────────────────────────────────────
 
+function isApple(): boolean {
+  const platform = (navigator as Navigator & { userAgentData?: { platform?: string } }).userAgentData?.platform ?? navigator.platform
+  return /mac|iphone|ipad|ipod/i.test(platform)
+}
+
 export function initApp() {
   applyTheme()
+
+  if (!isApple()) {
+    document.querySelectorAll('[data-shortcut-mod]').forEach((el) => {
+      el.textContent = 'Ctrl'
+      el.classList.add('is-ctrl')
+    })
+  }
 
   document.addEventListener('astro:after-swap', () => applyTheme())
   document.addEventListener('astro:page-load', () => {
