@@ -1,0 +1,47 @@
+---
+import type { FileTreeNode } from '../lib/file-tree.ts'
+
+export interface Props {
+  node: FileTreeNode
+  currentUrl: string
+  root?: boolean
+}
+
+const { node, currentUrl, root = false } = Astro.props
+const isActive = node.url !== '' && node.url === currentUrl
+---
+
+{
+  root ? (
+    <nav class="file-tree" aria-label="文件">
+      <ul class="ft-children ft-root">
+        {node.children.map((child) => <Astro.self node={child} currentUrl={currentUrl} />)}
+      </ul>
+    </nav>
+  ) : node.isDir ? (
+    <li class="ft-item ft-folder ft-collapsed" data-key={node.key}>
+      <div class="ft-row">
+        <button type="button" class="ft-toggle" aria-label={`展开或折叠 ${node.name}`} aria-expanded="false">
+          <svg class="ft-chevron" width="10" height="10" viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
+            <polyline points="3,1 7,5 3,9" />
+          </svg>
+        </button>
+        {node.url ? (
+          <a href={node.url} class:list={['ft-link', { 'ft-active': isActive }]}>{node.name}</a>
+        ) : (
+          <span class="ft-link ft-label">{node.name}</span>
+        )}
+      </div>
+      <ul class="ft-children">
+        {node.children.map((child) => <Astro.self node={child} currentUrl={currentUrl} />)}
+      </ul>
+    </li>
+  ) : (
+    <li class="ft-item ft-file">
+      <div class="ft-row">
+        <span class="ft-spacer" />
+        <a href={node.url} class:list={['ft-link', { 'ft-active': isActive }]}>{node.name}</a>
+      </div>
+    </li>
+  )
+}

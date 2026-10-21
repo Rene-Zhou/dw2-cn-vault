@@ -1,0 +1,20 @@
+---
+import Layout from '@layouts/Layout.astro'
+import { getSite } from '@lib/site'
+
+export function getStaticPaths() {
+  const { vault } = getSite()
+  const paths: Array<{ params: { slug: string | undefined }; props: { path: string } }> =
+    vault.notes.map((note) => ({ params: { slug: note.slug }, props: { path: note.path } }))
+  const home = vault.byUrl.get('/')
+  if (home) paths.push({ params: { slug: undefined }, props: { path: home.path } })
+  return paths
+}
+
+const site = getSite()
+const note = site.vault.notes.find((n) => n.path === Astro.props.path)!
+const page = site.page(note)
+const isHome = Astro.params.slug === undefined
+---
+
+<Layout page={page} backlinks={site.backlinks(note)} isHome={isHome} />

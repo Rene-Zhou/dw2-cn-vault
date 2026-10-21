@@ -1,0 +1,155 @@
+---
+import '../styles/app.css'
+import { ClientRouter } from 'astro:transitions'
+import FileTree from '@components/FileTree.astro'
+import { HoverPopover } from '@components/HoverPopover'
+import { SearchModal } from '@components/SearchModal'
+import { config } from '../config.ts'
+import { getSite, type Page } from '@lib/site'
+import { buildFileTree } from '@lib/file-tree'
+import { loadAppearance } from '@lib/obsidian-css'
+import type { Note } from '@lib/vault'
+
+interface Props {
+  page?: Page
+  backlinks?: Note[]
+  isHome?: boolean
+  /** Used by pages without a note (404) */
+  title?: string
+}
+
+const { page, backlinks = [], isHome = false } = Astro.props
+const note = page?.note
+const site = getSite()
+const appearance = loadAppearance(config.vaultDir)
+const tree = buildFileTree(site.vault.notes)
+const currentUrl = note?.url ?? ''
+const title = isHome || !note ? (Astro.props.title ? `${Astro.props.title} - ${config.title}` : config.title) : `${note.title} - ${config.title}`
+const crumbs = note ? note.dir.split('/').filter(Boolean) : []
+const viewClasses = [
+  'markdown-preview-view',
+  'markdown-rendered',
+  'node-insert-event',
+  appearance.readableLineLength && 'is-readable-line-width',
+  'allow-fold-headings',
+  'show-indentation-guide',
+  'allow-fold-lists',
+  ...(note?.cssclasses ?? []),
+].filter(Boolean)
+const description = page?.text.slice(0, 120)
+---
+
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="dark light" />
+    {description && <meta name="description" content={description} />}
+    <meta property="og:title" content={note?.title ?? config.title} />
+    <meta property="og:site_name" content={config.title} />
+    {description && <meta property="og:description" content={description} />}
+    <title>{title}</title>
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="stylesheet" href="/obsidian.css" />
+    <ClientRouter />
+  </head>
+  <body data-base-theme={appearance.baseTheme}>
+    <script is:inline>
+      (function () {
+        let pref = null
+        try { pref = localStorage.getItem('dw2-theme') } catch { /* storage blocked */ }
+        const base = document.body.dataset.baseTheme
+        const dark = pref ? pref === 'dark' : base === 'system' ? matchMedia('(prefers-color-scheme: dark)').matches : base !== 'light'
+        document.body.classList.add(dark ? 'theme-dark' : 'theme-light')
+      })()
+    </script>
+
+    <div class="app-container">
+      <aside class="sidebar sidebar-left" transition:persist="sidebar-left" aria-label="导航">
+        <div class="sidebar-header">
+          <a href="/" class="site-title">{config.title}</a>
+        </div>
+        <div class="sidebar-actions">
+          <button type="button" class="search-trigger" data-open-search>
+            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            <span>搜索</span>
+            <kbd>⌘K</kbd>
+          </button>
+        </div>
+        <div class="sidebar-scroll">
+          <FileTree node={tree} currentUrl={currentUrl} root />
+        </div>
+      </aside>
+      <div class="sidebar-backdrop" data-close-sidebar></div>
+
+      <div class="workspace">
+        <header class="view-header">
+          <button type="button" class="clickable-icon" data-toggle-sidebar aria-label="打开导航">
+            <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect width="18" height="18" x="3" y="3" rx="2" /><path d="M9 3v18" /></svg>
+          </button>
+          <div class="view-header-title-container">
+            {crumbs.map((c) => <span class="view-header-breadcrumb">{c}</span><span class="view-header-breadcrumb-separator">/</span>)}
+            <span class="view-header-title">{note?.name ?? Astro.props.title}</span>
+          </div>
+          <div class="view-actions">
+            <button type="button" class="clickable-icon" data-open-search aria-label="搜索">
+              <svg viewBox="0 0 24 24" class="svg-icon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
+            </button>
+            <button type="button" class="clickable-icon" data-toggle-theme aria-label="切换明暗主题">
+              <svg viewBox="0 0 24 24" class="svg-icon icon-sun" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4" /><path d="M12 2v2" /><path d="M12 20v2" /><path d="m4.93 4.93 1.41 1.41" /><path d="m17.66 17.66 1.41 1.41" /><path d="M2 12h2" /><path d="M20 12h2" /><path d="m6.34 17.66-1.41 1.41" /><path d="m19.07 4.93-1.41 1.41" /></svg>
+              <svg viewBox="0 0 24 24" class="svg-icon icon-moon" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z" /></svg>
+            </button>
+          </div>
+        </header>
+
+        <main class="view-content">
+          <div class="markdown-reading-view">
+            <div class:list={viewClasses}>
+              <div class="markdown-preview-sizer markdown-preview-section">
+                {page ? <Fragment set:html={page.html} /> : <slot />}
+              </div>
+            </div>
+          </div>
+        </main>
+      </div>
+
+      {page && (
+        <aside class="sidebar sidebar-right" aria-label="大纲与反向链接">
+          {page.outline.length > 1 && (
+            <section class="side-panel">
+              <h2 class="side-panel-title">大纲</h2>
+              <ul class="outline">
+                {page.outline.map((item) => (
+                  <li class={`outline-item level-${item.level}`}>
+                    <a href={`#${encodeURIComponent(item.id)}`}>{item.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+          <section class="side-panel">
+            <h2 class="side-panel-title">反向链接 <span class="count">{backlinks.length}</span></h2>
+            {backlinks.length > 0 ? (
+              <ul class="backlinks">
+                {backlinks.map((b) => (
+                  <li><a href={b.url} class="internal-link">{b.title}</a><span class="backlink-path">{b.dir}</span></li>
+                ))}
+              </ul>
+            ) : (
+              <p class="empty">没有反向链接</p>
+            )}
+          </section>
+        </aside>
+      )}
+    </div>
+
+    <HoverPopover client:load transition:persist="hover-popover" />
+    <SearchModal client:idle transition:persist="search-modal" />
+
+    <script>
+      import { initApp } from '../lib/client'
+      initApp()
+    </script>
+  </body>
+</html>
